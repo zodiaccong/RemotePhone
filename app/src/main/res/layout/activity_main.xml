@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Remote Screen Controller"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Status Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/status_background"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Trạng thái kết nối"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chưa kết nối"
+            android:textSize="14sp"
+            android:textColor="#FF0000" />
+
+        <TextView
+            android:id="@+id/serverAddressText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server: Chưa kết nối"
+            android:textSize="12sp"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+    <!-- Control Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <Button
+            android:id="@+id/startServiceButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bắt đầu chia sẻ màn hình"
+            android:textSize="16sp"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/stopServiceButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dừng chia sẻ"
+            android:textSize="16sp"
+            android:backgroundTint="#F44336"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/settingsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cài đặt"
+            android:textSize="16sp"
+            android:backgroundTint="#2196F3"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
+    <!-- Server Configuration -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/config_background"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cấu hình Server"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="IP Server:"
+                android:textSize="14sp"
+                android:gravity="center_vertical" />
+
+            <EditText
+                android:id="@+id/serverIpEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="192.168.5.214"
+                android:textSize="14sp"
+                android:inputType="text"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Port:"
+                android:textSize="14sp"
+                android:gravity="center_vertical" />
+
+            <EditText
+                android:id="@+id/serverPortEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="3000"
+                android:textSize="14sp"
+                android:inputType="number"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/saveConfigButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lưu cấu hình"
+            android:textSize="14sp"
+            android:layout_marginTop="12dp" />
+
+    </LinearLayout>
+
+    <!-- Log Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nhật ký hoạt động:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp" />
+
+    <ScrollView
+        android:id="@+id/logScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/log_background"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/logTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ứng dụng đã khởi động...\n"
+            android:textSize="12sp"
+            android:textIsSelectable="true" />
+
+    </ScrollView>
+
+</LinearLayout>
