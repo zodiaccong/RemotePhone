@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Remote Screen Viewer - Multi Device</title>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            height: 100vh;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .server-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .status {
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            padding: 16px;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            z-index: 10;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .devices-list {
+            margin-bottom: 16px;
+        }
+
+        .devices-list h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .device-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .device-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .device-item.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .screen-container {
+            flex: 1;
+            background: #1a1a1a;
+            position: relative;
+            overflow: auto;
+            min-height: 0;
+            padding: 20px;
+        }
+
+        .phones-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            justify-items: center;
+            align-items: start;
+            width: 100%;
+        }
+
+        .phone-frame {
+            width: 320px;
+            height: 680px;
+            background: #222;
+            border-radius: 36px;
+            padding: 12px;
+            box-shadow:
+                0 0 0 2px #333,
+                0 20px 50px rgba(0,0,0,0.5),
+                inset 0 0 10px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            touch-action: none;
+            z-index: 100;
+            transition: box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-frame:hover {
+            box-shadow:
+                0 0 0 2px #667eea,
+                0 25px 60px rgba(0,0,0,0.6),
+                inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 24px;
+            background: #222;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 4px;
+        }
+
+        .phone-notch::before {
+            content: '';
+            width: 80px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .phone-screen {
+            flex: 1;
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
+            width: 100%; /* Đảm bảo chiếm toàn bộ width */
+            height: 100%; /* Đảm bảo chiếm toàn bộ height */
+        }
+
+        .screen-image-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            width: 100%; /* Chiếm toàn bộ chiều rộng */
+            height: 100%; /* Chiếm toàn bộ chiều cao */
+            margin: 0; /* Loại bỏ margin */
+            padding: 0; /* Loại bỏ padding */
+        }
+
+        .screen-image {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            touch-action: none;
+            cursor: pointer;
+            position: relative !important;
+            top: 0;
+            left: auto !important;
+            right: auto !important;
+            bottom: 0;
+            margin: auto;
+            background: #000;
+        }
+
+        .touch-indicator {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(102, 126, 234, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 150;
+            transform: translate(-50%, -50%);
+            animation: touchPulse 0.3s ease-out;
+        }
+
+        @keyframes touchPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .swipe-trail {
+            position: absolute;
+            background: rgba(102, 126, 234, 0.4);
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 149;
+            transform-origin: left center;
+        }
+
+        .gesture-indicator {
+            position: absolute;
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(10px);
+            white-space: nowrap;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .gesture-rotate {
+            top: 50px;
+        }
+
+        .phone-status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 32px;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            color: white;
+            font-size: 11px;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 40%;
+            overflow: hidden;
+        }
+
+        .device-icon {
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .device-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .latency-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .latency-icon {
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .latency-value {
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .latency-good {
+            color: #10b981;
+        }
+
+        .latency-medium {
+            color: #f59e0b;
+        }
+
+        .latency-poor {
+            color: #ef4444;
+        }
+
+        .connection-quality {
+            font-size: 10px;
+            opacity: 0.8;
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .phone-buttons {
+            position: absolute;
+            right: -8px;
+            top: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .volume-button, .power-button {
+            width: 4px;
+            height: 40px;
+            background: #444;
+            border-radius: 2px;
+        }
+
+        .power-button {
+            height: 60px;
+            margin-top: 60px;
+        }
+
+        .phone-controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(30, 30, 30, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 -4px 20px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 24px 24px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            gap: 12px;
+            min-height: 70px;
+            transform: translateZ(0);
+            pointer-events: auto;
+        }
+
+        .phone-controls::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(50, 50, 50, 0.95);
+            border: 2px solid rgba(100, 100, 100, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: white;
+            font-size: 22px;
+            box-shadow:
+                0 3px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            pointer-events: auto;
+        }
+
+        .control-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(70, 70, 70, 0.95);
+            border-color: rgba(150, 150, 150, 0.7);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow:
+                0 6px 15px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .control-btn:active {
+            transform: translateY(0) scale(0.95);
+            box-shadow:
+                0 2px 5px rgba(0,0,0,0.3),
+                inset 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .control-btn:active::after {
+            opacity: 1;
+        }
+
+        .control-btn.home {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-color: rgba(124, 58, 237, 0.3);
+            box-shadow:
+                0 3px 12px rgba(124, 58, 237, 0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .control-btn.home:hover {
+            background: linear-gradient(135deg, #5f56e5 0%, #8c4aed 100%);
+            border-color: rgba(140, 74, 237, 0.5);
+            box-shadow:
+                0 6px 20px rgba(124, 58, 237, 0.6),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .control-btn.back {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow:
+                0 3px 12px rgba(16, 185, 129, 0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .control-btn.back:hover {
+            background: linear-gradient(135deg, #15a669 0%, #20c991 100%);
+            border-color: rgba(32, 201, 145, 0.5);
+            box-shadow:
+                0 6px 20px rgba(16, 185, 129, 0.6),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .control-btn.recent {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            border-color: rgba(239, 68, 68, 0.3);
+            box-shadow:
+                0 3px 12px rgba(239, 68, 68, 0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .control-btn.recent:hover {
+            background: linear-gradient(135deg, #ec3636 0%, #ff5454 100%);
+            border-color: rgba(255, 84, 84, 0.5);
+            box-shadow:
+                0 6px 20px rgba(239, 68, 68, 0.6),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* Tooltip cho desktop */
+        .control-btn[title] {
+            position: relative;
+        }
+
+        .control-btn[title]:hover::before {
+            content: attr(title);
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .control-btn[title]:hover::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        }
+
+        .no-connection {
+            color: #999;
+            text-align: center;
+            padding: 30px 20px;
+            max-width: 450px;
+        }
+
+        .no-connection h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #ccc;
+        }
+
+        .no-connection p {
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .selected-device-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .selected-device-info strong {
+            color: #667eea;
+        }
+
+        .gesture-help {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            max-width: 250px;
+            line-height: 1.4;
+        }
+
+        /* RESPONSIVE - MOBILE */
+        @media (max-width: 768px) {
+            body {
+                -webkit-text-size-adjust: 100%;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+                padding-bottom: 20px;
+            }
+
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+                height: 100vh;
+                padding-bottom: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header p {
+                font-size: 12px;
+            }
+
+            .status-bar {
+                padding: 12px;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                padding: 16px;
+                max-height: 200px;
+            }
+
+            .screen-container {
+                flex: 1;
+                min-height: 0;
+                padding: 10px;
+                padding-bottom: 20px;
+            }
+
+            .phones-grid {
+                padding: 0 10px !important; /* Giảm padding hai bên */
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .phone-frame {
+                width: 280px;
+                height: 600px;
+                margin-bottom: 20px;
+            }
+
+            .phone-controls {
+                padding: 10px 14px;
+                gap: 10px;
+                min-height: 65px;
+                border-radius: 0 0 20px 20px;
+            }
+
+            .control-btn {
+                width: 46px;
+                height: 46px;
+                font-size: 20px;
+                border-width: 1.5px;
+            }
+
+            .control-btn:hover {
+                transform: translateY(-1px) scale(1.03);
+            }
+
+            .control-btn:active {
+                transform: translateY(0) scale(0.94);
+            }
+
+            /* Ẩn tooltip trên mobile để tránh xung đột với touch */
+            .control-btn[title]:hover::before,
+            .control-btn[title]:hover::after {
+                display: none;
+            }
+
+            .screen-image {
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+
+            .phone-screen {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: none;
+            }
+
+            .phone-status-bar {
+                height: 30px;
+                padding: 0 12px;
+                font-size: 10px;
+            }
+
+            .device-name {
+                max-width: 70px;
+            }
+
+            .no-connection {
+                padding: 20px;
+            }
+
+            .no-connection h3 {
+                font-size: 18px;
+            }
+
+            .no-connection p {
+                font-size: 13px;
+            }
+
+            .gesture-help {
+                bottom: 60px;
+                left: 10px;
+                font-size: 11px;
+                max-width: 200px;
+            }
+        }
+
+        /* TABLET */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+            }
+
+            .phones-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .phone-controls {
+                padding: 12px 16px;
+                gap: 14px;
+            }
+
+            .control-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 21px;
+            }
+        }
+
+        /* LARGE SCREEN */
+        @media (min-width: 1025px) {
+            .phones-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="status-bar">
+            <div id="status" class="status disconnected">
+                🔄 Đang kết nối...
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="screen-container" id="screenContainer">
+                <div class="phones-grid" id="phonesGrid">
+                    <!-- Các điện thoại sẽ được thêm vào đây -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        class RemoteViewer {
+            constructor() {
+                this.socket = null;
+                this.isConnected = false;
+                this.selectedDevice = null;
+                this.selectedDeviceInfo = null;
+                this.latency = 0;
+                this.devices = [];
+                this.phoneElements = new Map();
+
+                // Biến cho cử chỉ đa điểm
+                this.touches = new Map();
+                this.activeGestures = new Set();
+                this.lastTouchTime = 0;
+                this.doubleTapTimeout = null;
+                this.deviceLatencies = new Map(); // Map: deviceId -> latency
+                this.deviceStatuses = new Map();  // Map: deviceId -> status
+                this.init();
+            }
+
+            init() {
+                this.connectToServer();
+                this.startLatencyCheck();
+                this.updatePhoneStatus();
+                this.setupGestureEvents();
+            }
+
+            setupGestureEvents() {
+                // Sự kiện sẽ được thêm vào từng điện thoại riêng biệt
+            }
+            updatePhoneStatusForDevice(deviceId) {
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const deviceNameElement = phoneElement.querySelector('.device-name');
+                const latencyElement = phoneElement.querySelector('.latency-value');
+                const qualityElement = phoneElement.querySelector('.connection-quality');
+
+                const device = this.devices.find(d => d.id === deviceId);
+
+                if (device) {
+                    deviceNameElement.textContent = device.name || 'Unknown Device';
+                }
+
+                // Lấy độ trễ và trạng thái cụ thể của thiết bị
+                const deviceLatency = this.deviceLatencies.get(deviceId) || 0;
+                const deviceStatus = this.deviceStatuses.get(deviceId) || 'Chưa kết nối';
+
+                let qualityText, qualityClass;
+
+                if (deviceStatus !== 'Đã kết nối' && deviceStatus !== 'Đang hoạt động') {
+                    // Trạng thái đặc biệt (đang kết nối, lỗi, v.v.)
+                    latencyElement.textContent = '--ms';
+                    latencyElement.className = 'latency-value latency-medium';
+                    qualityElement.textContent = deviceStatus;
+                    qualityElement.className = 'connection-quality latency-medium';
+                } else if (deviceLatency === 0) {
+                    qualityText = 'Đang đo...';
+                    qualityClass = 'latency-medium';
+                } else if (deviceLatency < 100) {
+                    qualityText = 'Kết nối tốt';
+                    qualityClass = 'latency-good';
+                } else if (deviceLatency < 300) {
+                    qualityText = 'Kết nối trung bình';
+                    qualityClass = 'latency-medium';
+                } else {
+                    qualityText = 'Kết nối kém';
+                    qualityClass = 'latency-poor';
+                }
+
+                // Chỉ cập nhật nếu là trạng thái bình thường
+                if (deviceStatus === 'Đã kết nối' || deviceStatus === 'Đang hoạt động') {
+                    latencyElement.textContent = deviceLatency > 0 ? `${deviceLatency}ms` : '--ms';
+                    latencyElement.className = `latency-value ${qualityClass}`;
+                    qualityElement.textContent = qualityText;
+                    qualityElement.className = `connection-quality ${qualityClass}`;
+                }
+            }
+            updateDeviceLatency(deviceId, latency) {
+                this.deviceLatencies.set(deviceId, latency);
+                this.updatePhoneStatusForDevice(deviceId);
+            }
+            updateDeviceStatus(deviceId, status) {
+                this.deviceStatuses.set(deviceId, status);
+                this.updatePhoneStatusForDevice(deviceId);
+            }
+
+            getTouchCoordinates(touch, phoneScreen, deviceId) {
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return { x: 0, y: 0 };
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+                const screenImageContainer = phoneElement.querySelector('.screen-image-container');
+
+                // Lấy bounding rect chính xác
+                const containerRect = screenImageContainer.getBoundingClientRect();
+
+                // Tính toán relative position CHÍNH XÁC
+                let relativeX = touch.clientX - containerRect.left;
+                let relativeY = touch.clientY - containerRect.top;
+
+                console.log('🔍 Tính toán tọa độ:', {
+                    'touch': `(${touch.clientX}, ${touch.clientY})`,
+                    'container': `left=${containerRect.left}, top=${containerRect.top}`,
+                    'relative': `(${relativeX}, ${relativeY})`,
+                    'containerSize': `${containerRect.width}x${containerRect.height}`
+                });
+
+                const EPSILON = 0;
+                const isInContainer = (
+                    relativeX >= -EPSILON &&
+                    relativeX <= containerRect.width + EPSILON &&
+                    relativeY >= -EPSILON &&
+                    relativeY <= containerRect.height + EPSILON
+                );
+
+                if (!isInContainer) {
+                    console.warn('❌ Chạm ngoài container (đã kiểm tra với tolerance):', {
+                        relativeX,
+                        relativeY,
+                        width: containerRect.width,
+                        height: containerRect.height,
+                        'rangeX': `[${-EPSILON}, ${containerRect.width + EPSILON}]`,
+                        'rangeY': `[${-EPSILON}, ${containerRect.height + EPSILON}]`,
+                        'isInX': relativeX >= -EPSILON && relativeX <= containerRect.width + EPSILON,
+                        'isInY': relativeY >= -EPSILON && relativeY <= containerRect.height + EPSILON
+                    });
+                    return { x: 0, y: 0 };
+                }
+
+                // Đảm bảo tọa độ không âm
+                relativeX = Math.max(0, Math.min(relativeX, containerRect.width));
+                relativeY = Math.max(0, Math.min(relativeY, containerRect.height));
+
+                const imgNaturalWidth = screenImage.naturalWidth;
+                const imgNaturalHeight = screenImage.naturalHeight;
+
+                // Nếu ảnh chưa load xong, return tọa độ tương đối
+                if (!imgNaturalWidth || !imgNaturalHeight || imgNaturalWidth === 0 || imgNaturalHeight === 0) {
+                    console.log('⚠️ Ảnh chưa sẵn sàng, sử dụng tọa độ tương đối');
+                    return {
+                        x: Math.round(relativeX),
+                        y: Math.round(relativeY)
+                    };
+                }
+
+                // Tính toán kích thước hiển thị thực tế của ảnh trong container
+                const containerWidth = containerRect.width;
+                const containerHeight = containerRect.height;
+                const imgAspect = imgNaturalWidth / imgNaturalHeight;
+                const containerAspect = containerWidth / containerHeight;
+
+                let displayedWidth, displayedHeight, offsetX, offsetY;
+
+                if (imgAspect > containerAspect) {
+                    // Ảnh rộng hơn container -> fit theo width
+                    displayedWidth = containerWidth;
+                    displayedHeight = containerWidth / imgAspect;
+                    offsetX = 0;
+                    offsetY = (containerHeight - displayedHeight) / 2;
+                } else {
+                    // Ảnh cao hơn container -> fit theo height
+                    displayedHeight = containerHeight;
+                    displayedWidth = containerHeight * imgAspect;
+                    offsetX = (containerWidth - displayedWidth) / 2;
+                    offsetY = 0;
+                }
+
+                // Kiểm tra xem có offset âm không (nên không xảy ra)
+                offsetX = Math.max(0, offsetX);
+                offsetY = Math.max(0, offsetY);
+
+                console.log('📐 Kích thước hiển thị:', {
+                    'imageNatural': `${imgNaturalWidth}x${imgNaturalHeight}`,
+                    'container': `${containerWidth}x${containerHeight}`,
+                    'displayed': `${displayedWidth.toFixed(1)}x${displayedHeight.toFixed(1)}`,
+                    'offset': `(${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`
+                });
+
+                // Kiểm tra xem chạm có nằm trong vùng ảnh hiển thị không
+                // Cho phép một chút sai số ở biên
+                const isInImageBounds = (
+                    relativeX >= offsetX - EPSILON &&
+                    relativeX <= offsetX + displayedWidth + EPSILON &&
+                    relativeY >= offsetY - EPSILON &&
+                    relativeY <= offsetY + displayedHeight + EPSILON
+                );
+
+                if (!isInImageBounds) {
+                    console.warn('❌ Chạm ngoài vùng ảnh hiển thị', {
+                        'relative': `(${relativeX}, ${relativeY})`,
+                        'imageBounds': {
+                            x: `[${offsetX.toFixed(1)}, ${(offsetX + displayedWidth).toFixed(1)}]`,
+                            y: `[${offsetY.toFixed(1)}, ${(offsetY + displayedHeight).toFixed(1)}]`
+                        },
+                        'isInX': relativeX >= offsetX && relativeX <= offsetX + displayedWidth,
+                        'isInY': relativeY >= offsetY && relativeY <= offsetY + displayedHeight
+                    });
+                    return { x: 0, y: 0 };
+                }
+
+                // Tính tỷ lệ scale
+                const scaleX = imgNaturalWidth / displayedWidth;
+                const scaleY = imgNaturalHeight / displayedHeight;
+
+                // Tính tọa độ thực trên ảnh gốc
+                const imageX = (relativeX - offsetX) * scaleX;
+                const imageY = (relativeY - offsetY) * scaleY;
+
+                // Đảm bảo tọa độ nằm trong phạm vi ảnh
+                const finalX = Math.max(0, Math.min(imageX, imgNaturalWidth - 1));
+                const finalY = Math.max(0, Math.min(imageY, imgNaturalHeight - 1));
+
+                console.log('✅ Tọa độ cuối cùng:', {
+                    'relative': `(${relativeX.toFixed(1)}, ${relativeY.toFixed(1)})`,
+                    'onImage': `(${Math.round(finalX)}, ${Math.round(finalY)})`,
+                    'percentage': {
+                        x: (finalX / imgNaturalWidth * 100).toFixed(1) + '%',
+                        y: (finalY / imgNaturalHeight * 100).toFixed(1) + '%'
+                    }
+                });
+
+                return {
+                    x: Math.round(finalX),
+                    y: Math.round(finalY)
+                };
+            }
+
+            setupPhoneEvents(phoneElement, deviceId) {
+                // CHỈ thêm sự kiện vào screen-image-container, không phải toàn bộ phone-screen
+                const screenImageContainer = phoneElement.querySelector('.screen-image-container');
+                const screenImage = phoneElement.querySelector('.screen-image');
+                const phoneControls = phoneElement.querySelector('.phone-controls');
+
+                // Touch events với passive: false để có thể preventDefault
+                screenImageContainer.addEventListener('touchstart', (e) => {
+                    this.handleTouchStart(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // QUAN TRỌNG: Ngăn lan truyền
+                }, { passive: false });
+
+                screenImageContainer.addEventListener('touchmove', (e) => {
+                    this.handleTouchMove(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền
+                }, { passive: false });
+
+                screenImageContainer.addEventListener('touchend', (e) => {
+                    this.handleTouchEnd(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền
+                }, { passive: false });
+
+                screenImageContainer.addEventListener('touchcancel', (e) => {
+                    this.handleTouchEnd(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền
+                }, { passive: false });
+
+                // Mouse events cho desktop
+                screenImageContainer.addEventListener('mousedown', (e) => {
+                    this.handleMouseStart(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền
+                });
+
+                screenImageContainer.addEventListener('mousemove', (e) => {
+                    if (e.buttons === 1) { // Chỉ khi đang giữ chuột trái
+                        this.handleMouseMove(e, deviceId);
+                        e.preventDefault();
+                        e.stopPropagation(); // Ngăn lan truyền
+                    }
+                });
+
+                screenImageContainer.addEventListener('mouseup', (e) => {
+                    this.handleMouseEnd(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền
+                });
+
+                screenImageContainer.addEventListener('mouseleave', (e) => {
+                    this.handleMouseEnd(e, deviceId);
+                    e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền
+                });
+
+                // LOẠI BỎ hoàn toàn sự kiện trên screen-image
+                // Không thêm sự kiện cho screen-image nữa
+
+                // Thêm sự kiện cho các nút điều khiển - RIÊNG BIỆT
+                const controlButtons = phoneElement.querySelectorAll('.control-btn');
+                controlButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Ngăn không cho sự kiện lan truyền lên container
+                        const key = btn.getAttribute('data-key');
+                        if (key) {
+                            this.sendKey(key, deviceId);
+                        }
+                    });
+
+                    // Ngăn touch events trên các nút
+                    btn.addEventListener('touchstart', (e) => {
+                        e.stopPropagation(); // QUAN TRỌNG: Ngăn không cho touch lan truyền
+                    }, { passive: true });
+
+                    btn.addEventListener('touchend', (e) => {
+                        e.stopPropagation(); // QUAN TRỌNG: Ngăn không cho touch lan truyền
+                    }, { passive: true });
+                });
+
+                // Ngăn touch events trên toàn bộ phone-controls
+                phoneControls.addEventListener('touchstart', (e) => {
+                    e.stopPropagation(); // Ngăn không cho touch lan truyền lên container
+                }, { passive: true });
+
+                phoneControls.addEventListener('touchend', (e) => {
+                    e.stopPropagation(); // Ngăn không cho touch lan truyền lên container
+                }, { passive: true });
+            }
+
+            handleTouchStart(e, deviceId) {
+                if (!this.isConnected || !deviceId) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+
+                // Kiểm tra xem ảnh đã load chưa
+                if (!screenImage.src || screenImage.style.display === 'none') {
+                    console.log('⚠️ Chưa có ảnh màn hình để tương tác');
+                    return;
+                }
+
+                for (let touch of e.changedTouches) {
+                    // CHỈ tính toán và hiển thị một lần
+                    const coords = this.getTouchCoordinates(touch, phoneElement.querySelector('.phone-screen'), deviceId);
+                    const touchId = touch.identifier;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+
+                    // Kiểm tra xem touchId này đã được xử lý chưa
+                    if (this.touches.has(touchId)) {
+                        console.log('⚠️ Touch đã được xử lý, bỏ qua:', touchId);
+                        continue;
+                    }
+
+                    this.touches.set(touchId, {
+                        startX: coords.x,
+                        startY: coords.y,
+                        lastX: coords.x,
+                        lastY: coords.y,
+                        startTime: Date.now(),
+                        deviceId: deviceId
+                    });
+
+                    // CHỈ vẽ một indicator
+                    this.showTouchIndicator(x, y, phoneElement);
+
+                    // Gửi sự kiện touch
+                    this.sendTouchEvent('down', coords.x, coords.y, touchId, deviceId);
+                }
+            }
+
+            handleTouchMove(e, deviceId) {
+                if (!this.isConnected || !deviceId) return;
+
+                e.preventDefault();
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+
+                for (let touch of e.changedTouches) {
+                    const touchId = touch.identifier;
+                    const touchData = this.touches.get(touchId);
+
+                    if (touchData && touchData.deviceId === deviceId) {
+                        const coords = this.getTouchCoordinates(touch, phoneElement.querySelector('.phone-screen'), deviceId);
+
+                        // Vẽ đường kéo với tọa độ hiển thị
+                        const screenRect = phoneElement.querySelector('.phone-screen').getBoundingClientRect();
+                        const displayX = touch.clientX - screenRect.left;
+                        const displayY = touch.clientY - screenRect.top;
+
+                        // Sử dụng cache tọa độ hiển thị thay vì tính toán
+                        if (touchData.lastDisplayX !== undefined && touchData.lastDisplayY !== undefined) {
+                            this.drawSwipeTrail(touchData.lastDisplayX, touchData.lastDisplayY, displayX, displayY, phoneElement);
+                        }
+
+                        // Cache tọa độ hiển thị cho lần sau
+                        touchData.lastDisplayX = displayX;
+                        touchData.lastDisplayY = displayY;
+
+                        // Cập nhật vị trí thực của ảnh
+                        touchData.lastX = coords.x;
+                        touchData.lastY = coords.y;
+
+                        // Gửi sự kiện di chuyển với tọa độ thực của ảnh
+                        this.sendTouchEvent('move', coords.x, coords.y, touchId, deviceId);
+                    }
+                }
+
+                // Xử lý cử chỉ đa điểm
+                if (e.touches.length === 2) {
+                    this.handleMultiTouchGesture(e, deviceId);
+                }
+            }
+
+            handleTouchEnd(e, deviceId) {
+                if (!this.isConnected || !deviceId) {
+                    return;
+                }
+
+                e.preventDefault();
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                for (let touch of e.changedTouches) {
+                    const touchId = touch.identifier;
+                    const touchData = this.touches.get(touchId);
+
+                    if (touchData && touchData.deviceId === deviceId) {
+                        // Lấy tọa độ thực của ảnh từ cache
+                        const coords = {
+                            x: touchData.lastX,
+                            y: touchData.lastY
+                        };
+
+                        // Gửi sự kiện nhả với tọa độ thực của ảnh
+                        this.sendTouchEvent('up', coords.x, coords.y, touchId, deviceId);
+
+                        // Xóa touch data
+                        this.touches.delete(touchId);
+                    }
+                }
+
+                // Xóa tất cả swipe trails khi kết thúc
+                this.clearSwipeTrails(phoneElement);
+            }
+
+            handleMouseStart(e, deviceId) {
+                if (!this.isConnected || !deviceId) {
+                    return;
+                }
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+
+                // Kiểm tra xem ảnh đã load chưa
+                if (!screenImage.src || screenImage.style.display === 'none') {
+                    console.log('⚠️ Chưa có ảnh màn hình để tương tác');
+                    return;
+                }
+                const coords = this.getTouchCoordinates(e, phoneElement.querySelector('.phone-screen'), deviceId);
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Sử dụng ID 0 cho mouse
+                this.touches.set(0, {
+                    startX: coords.x,
+                    startY: coords.y,
+                    lastX: coords.x,
+                    lastY: coords.y,
+                    startTime: Date.now(),
+                    deviceId: deviceId
+                });
+
+                this.showTouchIndicator(x, y, phoneElement);
+                this.sendTouchEvent('down', coords.x, coords.y, 0, deviceId);
+            }
+
+            handleMouseMove(e, deviceId) {
+                if (!this.isConnected || !deviceId) {
+                    return;
+                }
+
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+                const touchData = this.touches.get(0);
+
+                if (touchData && touchData.deviceId === deviceId && e.buttons === 1) {
+                    const coords = this.getTouchCoordinates(e, phoneElement.querySelector('.phone-screen'), deviceId);
+
+                    // Vẽ đường kéo với tọa độ hiển thị (không cần tính scale phức tạp)
+                    const screenRect = phoneElement.querySelector('.phone-screen').getBoundingClientRect();
+                    const displayX = e.clientX - screenRect.left;
+                    const displayY = e.clientY - screenRect.top;
+
+                    // Lấy tọa độ hiển thị của điểm trước đó từ cache
+                    if (touchData.lastDisplayX !== undefined && touchData.lastDisplayY !== undefined) {
+                        this.drawSwipeTrail(touchData.lastDisplayX, touchData.lastDisplayY, displayX, displayY, phoneElement);
+                    }
+
+                    // Cache tọa độ hiển thị cho lần sau
+                    touchData.lastDisplayX = displayX;
+                    touchData.lastDisplayY = displayY;
+
+                    // Cập nhật vị trí thực của ảnh
+                    touchData.lastX = coords.x;
+                    touchData.lastY = coords.y;
+
+                    // Gửi sự kiện di chuyển với tọa độ thực của ảnh
+                    this.sendTouchEvent('move', coords.x, coords.y, 0, deviceId);
+                }
+            }
+
+            handleMouseEnd(e, deviceId) {
+                if (!this.isConnected || !deviceId) {
+                    return;
+                }
+
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+                const touchData = this.touches.get(0);
+
+                if (touchData && touchData.deviceId === deviceId) {
+                    const coords = this.getTouchCoordinates(e, phoneElement.querySelector('.phone-screen'), deviceId);
+                    this.sendTouchEvent('up', coords.x, coords.y, 0, deviceId);
+                    this.touches.delete(0);
+                    this.clearSwipeTrails(phoneElement);
+                }
+            }
+
+            handleMultiTouchGesture(e, deviceId) {
+                if (e.touches.length !== 2) return;
+
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+                if (!screenImage.src || screenImage.style.display === 'none') return;
+
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+
+                const coords1 = this.getTouchCoordinates(touch1, phoneElement.querySelector('.phone-screen'), deviceId);
+                const coords2 = this.getTouchCoordinates(touch2, phoneElement.querySelector('.phone-screen'), deviceId);
+
+                // Tính khoảng cách giữa hai ngón tay (trên ảnh thực)
+                const distance = Math.sqrt(Math.pow(coords2.x - coords1.x, 2) + Math.pow(coords2.y - coords1.y, 2));
+
+                // Tính góc giữa hai ngón tay
+                const angle = Math.atan2(coords2.y - coords1.y, coords2.x - coords1.x) * 180 / Math.PI;
+
+                // Tính tâm (trên ảnh thực)
+                const centerX = (coords1.x + coords2.x) / 2;
+                const centerY = (coords1.y + coords2.y) / 2;
+
+                // Gửi cử chỉ pinch/zoom với tọa độ thực
+                this.sendGestureEvent('pinch', {
+                    centerX: Math.round(centerX),
+                    centerY: Math.round(centerY),
+                    distance: distance,
+                    angle: angle
+                }, deviceId);
+
+                this.showGestureIndicator('pinch', '🔍 Pinch to Zoom', phoneElement);
+            }
+
+            debugTouchCoordinates(touch, calculatedCoords, deviceId) {
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+                const phoneScreen = phoneElement.querySelector('.phone-screen');
+                const screenRect = phoneScreen.getBoundingClientRect();
+
+                const imgNaturalWidth = screenImage.naturalWidth;
+                const imgNaturalHeight = screenImage.naturalHeight;
+
+                if (!imgNaturalWidth || !imgNaturalHeight) return;
+
+                // Tính toán kích thước hiển thị thực tế
+                const containerWidth = screenRect.width;
+                const containerHeight = screenRect.height;
+                const imgAspect = imgNaturalWidth / imgNaturalHeight;
+                const containerAspect = containerWidth / containerHeight;
+
+                let displayedWidth, displayedHeight, offsetX, offsetY;
+
+                if (imgAspect > containerAspect) {
+                    displayedWidth = containerWidth;
+                    displayedHeight = containerWidth / imgAspect;
+                    offsetX = 0;
+                    offsetY = (containerHeight - displayedHeight) / 2;
+                } else {
+                    displayedHeight = containerHeight;
+                    displayedWidth = containerHeight * imgAspect;
+                    offsetX = (containerWidth - displayedWidth) / 2;
+                    offsetY = 0;
+                }
+
+                console.log('🔍 DEBUG TỌA ĐỘ CHI TIẾT:', {
+                    'Device': deviceId,
+                    'Vùng hiển thị': {
+                        'Phone Screen': `${Math.round(screenRect.width)}x${Math.round(screenRect.height)}`,
+                        'Ảnh thực tế': `${imgNaturalWidth}x${imgNaturalHeight}`,
+                        'Ảnh hiển thị': `${Math.round(displayedWidth)}x${Math.round(displayedHeight)}`,
+                        'Offset': `(${Math.round(offsetX)}, ${Math.round(offsetY)})`
+                    },
+                    'Vị trí chạm': {
+                        'Tuyệt đối': `(${Math.round(touch.clientX)}, ${Math.round(touch.clientY)})`,
+                        'Tương đối PhoneScreen': `(${Math.round(touch.clientX - screenRect.left)}, ${Math.round(touch.clientY - screenRect.top)})`,
+                        'Tương đối Ảnh': `(${Math.round((touch.clientX - screenRect.left - offsetX))}, ${Math.round((touch.clientY - screenRect.top - offsetY))})`
+                    },
+                    'Tọa độ ảnh gốc': `(${calculatedCoords.x}, ${calculatedCoords.y})`,
+                    'Tỷ lệ %': {
+                        x: imgNaturalWidth > 0 ? ((calculatedCoords.x / imgNaturalWidth) * 100).toFixed(1) + '%' : 'N/A',
+                        y: imgNaturalHeight > 0 ? ((calculatedCoords.y / imgNaturalHeight) * 100).toFixed(1) + '%' : 'N/A'
+                    }
+                });
+            }
+
+            sendTouchEvent(type, x, y, touchId, deviceId) {
+                const phoneElement = this.phoneElements.get(deviceId);
+                if (!phoneElement) return;
+
+                const screenImage = phoneElement.querySelector('.screen-image');
+
+                console.log(`📍 ${type.toUpperCase()} tại:`, {
+                    'Device': deviceId,
+                    'Tọa độ ảnh': `(${x}, ${y})`,
+                    'Kích thước ảnh': `${screenImage.naturalWidth}x${screenImage.naturalHeight}`,
+                    'Tỷ lệ': {
+                        x: screenImage.naturalWidth > 0 ? (x / screenImage.naturalWidth * 100).toFixed(1) + '%' : 'N/A',
+                        y: screenImage.naturalHeight > 0 ? (y / screenImage.naturalHeight * 100).toFixed(1) + '%' : 'N/A'
+                    }
+                });
+
+                const command = {
+                    device_id: deviceId,
+                    type: 'touch',
+                    command: type,
+                    data: {
+                        x: Math.round(x),
+                        y: Math.round(y),
+                        touch_id: touchId,
+                        pressure: 1.0,
+                        timestamp: Date.now(),
+                        // Thêm thông tin về kích thước ảnh để server có thể verify
+                        image_width: screenImage.naturalWidth,
+                        image_height: screenImage.naturalHeight
+                    }
+                };
+
+                this.socket.emit('control_command', command);
+            }
+
+            sendGestureEvent(gesture, data, deviceId) {
+                const command = {
+                    device_id: deviceId,
+                    type: 'gesture',
+                    command: gesture,
+                    data: data
+                };
+
+                this.socket.emit('control_command', command);
+            }
+
+            showTouchIndicator(x, y, phoneElement) {
+                const indicator = document.createElement('div');
+                indicator.className = 'touch-indicator';
+                indicator.style.left = x + 'px';
+                indicator.style.top = y + 'px';
+
+                phoneElement.querySelector('.phone-screen').appendChild(indicator);
+
+                // Tự động xóa sau animation
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.parentNode.removeChild(indicator);
+                    }
+                }, 300);
+            }
+
+            drawSwipeTrail(fromX, fromY, toX, toY, phoneElement) {
+                const trail = document.createElement('div');
+                trail.className = 'swipe-trail';
+
+                const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+
+                // Giới hạn kích thước
+                const maxWidth = 8;
+                const minWidth = 2;
+                const trailWidth = Math.max(minWidth, Math.min(maxWidth, distance / 10));
+
+                trail.style.width = distance + 'px';
+                trail.style.height = trailWidth + 'px';
+                trail.style.left = fromX + 'px';
+                trail.style.top = fromY + 'px';
+                trail.style.transform = `rotate(${angle}deg)`;
+                trail.style.transformOrigin = 'left center';
+                trail.style.filter = 'blur(1px)';
+
+                phoneElement.querySelector('.phone-screen').appendChild(trail);
+
+                // Tự động xóa sau 1 giây
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                }, 100);
+            }
+
+            clearSwipeTrails(phoneElement) {
+                const trails = phoneElement.querySelectorAll('.swipe-trail');
+                trails.forEach(trail => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                });
+            }
+
+            showGestureIndicator(type, message, phoneElement) {
+                const indicator = phoneElement.querySelector(`.gesture-${type}`);
+                if (indicator) {
+                    indicator.textContent = message;
+                    indicator.style.opacity = '1';
+                    setTimeout(() => {
+                        indicator.style.opacity = '0';
+                    }, 2000);
+                }
+            }
+
+            connectToServer() {
+                console.log('🔄 Đang kết nối đến server...');
+                this.socket = io();
+
+                this.socket.on('connect', () => {
+                    console.log('✅ Đã kết nối đến server');
+                    this.updateStatus('✅ Đã kết nối server', true);
+                    this.socket.emit('register_viewer', {
+                        type: 'web_viewer',
+                        user_agent: navigator.userAgent
+                    });
+                });
+
+                this.socket.on('disconnect', () => {
+                    console.log('❌ Mất kết nối server');
+                    this.updateStatus('❌ Mất kết nối server', false);
+                    // Cập nhật trạng thái cho tất cả thiết bị
+                    this.phoneElements.forEach((element, deviceId) => {
+                        this.updateDeviceStatus(deviceId, 'Mất kết nối server');
+                    });
+                });
+
+                this.socket.on('connect_error', (error) => {
+                    console.error('❌ Lỗi kết nối:', error);
+                    this.updateStatus('❌ Lỗi kết nối server', false);
+                    this.phoneElements.forEach((element, deviceId) => {
+                        this.updateDeviceStatus(deviceId, 'Lỗi kết nối');
+                    });
+                });
+
+                this.socket.on('viewer_registered', (data) => {
+                    console.log('✅ Đã đăng ký viewer thành công');
+                    this.updateDevicesList(data.devices || []);
+                });
+
+                this.socket.on('screen_update', (data) => {
+                    console.log('📺 Nhận dữ liệu màn hình từ:', data.device_id);
+                    if (data.image_data) {
+                        this.updateScreen(data.image_data, data.device_id);
+                        // Cập nhật trạng thái khi nhận được dữ liệu màn hình
+                        this.updateDeviceStatus(data.device_id, 'Đang hoạt động');
+                    }
+                });
+
+                this.socket.on('device_connected', (data) => {
+                    console.log('📱 Thiết bị mới kết nối:', data);
+                    this.updateDeviceStatus(data.device_id, 'Đã kết nối');
+                    this.refreshDevicesList();
+                });
+
+                this.socket.on('device_disconnected', (data) => {
+                    console.log('📱 Thiết bị ngắt kết nối:', data);
+                    this.updateDeviceStatus(data.device_id, 'Đã ngắt kết nối');
+                    setTimeout(() => {
+                        this.removePhone(data.device_id);
+                        this.refreshDevicesList();
+                    }, 1000);
+                });
+
+                this.socket.on('device_selected', (data) => {
+                    console.log('🎯 Kết quả chọn thiết bị:', data);
+                    if (data.status === 'success') {
+                        this.selectedDevice = data.device_id;
+                        this.selectedDeviceInfo = data.device_info;
+                        this.updateSelectedDeviceDisplay();
+                        this.updateDeviceStatus(data.device_id, 'Đang kết nối...');
+                    }
+                });
+
+                // THÊM: Xử lý pong với deviceId cụ thể
+                this.socket.on('pong', (data) => {
+                    const now = Date.now();
+                    const sentTime = new Date(data.timestamp).getTime();
+                    const latency = now - sentTime;
+
+                    if (data.device_id) {
+                        // Có deviceId cụ thể - cập nhật cho thiết bị đó
+                        this.updateDeviceLatency(data.device_id, latency);
+                    } else {
+                        // Không có deviceId - cập nhật cho tất cả (fallback)
+                        this.phoneElements.forEach((element, deviceId) => {
+                            this.updateDeviceLatency(deviceId, latency);
+                        });
+                    }
+                });
+            }
+
+            updateScreen(imageData, deviceId) {
+                let phoneElement = this.phoneElements.get(deviceId);
+
+                // Nếu chưa có phone element cho device này
+                if (!phoneElement) {
+                    // Tìm thông tin thiết bị từ danh sách
+                    const device = this.devices.find(d => d.id === deviceId);
+
+                    // Nếu không tìm thấy thông tin thiết bị, tạo object mặc định
+                    if (!device) {
+                        console.log('⚠️ Không tìm thấy thông tin thiết bị trong danh sách:', deviceId);
+
+                        // Thêm thiết bị mặc định vào danh sách để tránh lỗi
+                        this.devices.push({
+                            id: deviceId,
+                            name: `Device ${deviceId.substring(0, 8)}...`,
+                            screen_width: 1080,
+                            screen_height: 1920
+                        });
+                    }
+
+                    // Tạo phone element mới
+                    phoneElement = this.createPhoneElement(deviceId);
+                }
+
+                // Tiếp tục cập nhật màn hình
+                if (phoneElement) {
+                    const screenImage = phoneElement.querySelector('.screen-image');
+                    const noConnection = phoneElement.querySelector('.no-connection');
+
+                    if (imageData) {
+                        // Thêm sự kiện load để debug
+                        screenImage.onload = () => {
+                            console.log('🖼️ Ảnh đã load:', {
+                                'Device': deviceId,
+                                'Kích thước thực': `${screenImage.naturalWidth}x${screenImage.naturalHeight}`,
+                                'Kích thước hiển thị': `${screenImage.offsetWidth}x${screenImage.offsetHeight}`,
+                                'Tỷ lệ scale': {
+                                    x: (screenImage.naturalWidth / screenImage.offsetWidth).toFixed(2),
+                                    y: (screenImage.naturalHeight / screenImage.offsetHeight).toFixed(2)
+                                }
+                            });
+                        };
+
+                        screenImage.src = 'data:image/jpeg;base64,' + imageData;
+                        screenImage.style.display = 'block';
+                        if (noConnection) noConnection.style.display = 'none';
+                    }
+                }
+            }
+
+            createPhoneElement(deviceId) {
+                // Kiểm tra xem điện thoại đã tồn tại chưa
+                if (this.phoneElements.has(deviceId)) {
+                    console.log('⚠️ Điện thoại đã tồn tại, bỏ qua:', deviceId);
+                    return this.phoneElements.get(deviceId);
+                }
+
+                const phonesGrid = document.getElementById('phonesGrid');
+
+                // Tìm thông tin thiết bị từ danh sách
+                let device = this.devices.find(d => d.id === deviceId);
+
+                // Nếu không tìm thấy, tạo object mặc định
+                if (!device) {
+                    console.log('⚠️ Tạo thiết bị mặc định cho:', deviceId);
+                    device = {
+                        id: deviceId,
+                        name: `Device ${deviceId.substring(0, 8)}...`,
+                        screen_width: 1080,
+                        screen_height: 1920
+                    };
+
+                    // Thêm vào danh sách devices
+                    this.devices.push(device);
+                }
+
+                // Kiểm tra xem element DOM đã tồn tại chưa
+                const existingElement = document.getElementById(`phone-${deviceId}`);
+                if (existingElement) {
+                    console.log('⚠️ Element DOM đã tồn tại, bỏ qua:', deviceId);
+                    this.phoneElements.set(deviceId, existingElement);
+                    return existingElement;
+                }
+
+                // Tạo element điện thoại mới
+                const phoneElement = document.createElement('div');
+                phoneElement.className = 'phone-frame';
+                phoneElement.id = `phone-${deviceId}`;
+
+                // Sử dụng optional chaining và fallback để tránh lỗi undefined
+                phoneElement.innerHTML = `
+                    <div class="phone-screen">
+                        <!-- Thanh trạng thái với tên thiết bị và độ trễ -->
+                        <div class="phone-status-bar">
+                            <div class="device-info">
+                                <span class="device-name">${device?.name || `Device ${deviceId.substring(0, 8)}...`}</span>
+                            </div>
+                            <div class="latency-info">
+                                <span class="latency-value">--ms</span>
+                            </div>
+                            <div class="connection-quality">Chưa kết nối</div>
+                        </div>
+
+                        <!-- Container cho ảnh màn hình - CHỈ container này nhận touch -->
+                        <div class="screen-image-container" id="screen-container-${deviceId}">
+                            <img class="screen-image" src="" alt="Remote Screen" style="display: none;">
+                            <div class="no-connection">
+                                <h3>⏳ Đang chờ dữ liệu...</h3>
+                                <p>Thiết bị: ${device?.name || `Device ${deviceId.substring(0, 8)}...`}</p>
+                                <p>Kích thước: ${device?.screen_width || 1080}x${device?.screen_height || 1920}</p>
+                            </div>
+                        </div>
+
+                        <!-- Các nút điều khiển ở dưới cùng màn hình - RIÊNG BIỆT với touch màn hình -->
+                        <div class="phone-controls" id="phone-controls-${deviceId}">
+                            <div class="control-btn recent" data-key="recent" title="Recent Apps">
+                                ☰
+                            </div>
+                            <div class="control-btn home" data-key="home" title="Home">
+                                ⌂
+                            </div>
+                            <div class="control-btn back" data-key="back" title="Back">
+                                ◀
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="phone-buttons">
+                        <div class="volume-button"></div>
+                        <div class="volume-button"></div>
+                        <div class="power-button"></div>
+                    </div>
+                `;
+
+                phonesGrid.appendChild(phoneElement);
+                this.phoneElements.set(deviceId, phoneElement);
+
+                // Thiết lập sự kiện cho điện thoại mới
+                this.setupPhoneEvents(phoneElement, deviceId);
+
+                console.log('📱 Đã tạo điện thoại cho thiết bị:', deviceId);
+                return phoneElement;
+            }
+
+            removePhone(deviceId) {
+                const phoneElement = document.getElementById(`phone-${deviceId}`);
+                if (phoneElement && phoneElement.parentNode) {
+                    phoneElement.parentNode.removeChild(phoneElement);
+                    this.phoneElements.delete(deviceId);
+                    console.log('📱 Đã xóa điện thoại của thiết bị:', deviceId);
+                } else if (this.phoneElements.has(deviceId)) {
+                    this.phoneElements.delete(deviceId);
+                    console.log('📱 Đã xóa điện thoại khỏi map:', deviceId);
+                }
+            }
+
+            updateStatus(message, isConnected) {
+                const statusElement = document.getElementById('status');
+                statusElement.textContent = message;
+                statusElement.className = `status ${isConnected ? 'connected' : 'disconnected'}`;
+                this.isConnected = isConnected;
+            }
+
+            updateDevicesList(devices) {
+                this.devices = devices;
+
+                console.log('📱 Cập nhật danh sách thiết bị:', devices.map(d => d.id));
+
+                if (devices.length === 0) {
+                    this.phoneElements.forEach((element, deviceId) => {
+                        this.removePhone(deviceId);
+                    });
+                    return;
+                }
+
+                // Tạo phone elements cho các thiết bị mới
+                devices.forEach(device => {
+                    if (!this.phoneElements.has(device.id)) {
+                        console.log('➕ Tạo điện thoại mới cho:', device.id);
+                        this.createPhoneElement(device.id);
+                        // KHỞI TẠO trạng thái mặc định cho thiết bị mới
+                        this.updateDeviceStatus(device.id, 'Đã kết nối');
+                        this.updateDeviceLatency(device.id, 0);
+                    }
+                });
+
+                // Xóa phone elements của các thiết bị không còn kết nối
+                const currentDeviceIds = devices.map(d => d.id);
+                this.phoneElements.forEach((element, deviceId) => {
+                    if (!currentDeviceIds.includes(deviceId)) {
+                        console.log('🗑️ Xóa điện thoại không còn kết nối:', deviceId);
+                        this.removePhone(deviceId);
+                        // XÓA dữ liệu trạng thái
+                        this.deviceLatencies.delete(deviceId);
+                        this.deviceStatuses.delete(deviceId);
+                    }
+                });
+            }
+
+            refreshDevicesList() {
+                if (this.socket) {
+                    this.socket.emit('device_connected');
+                }
+            }
+
+            selectDevice(deviceId, event) {
+                console.log('🎯 Chọn thiết bị:', deviceId);
+                this.socket.emit('select_device', { device_id: deviceId });
+
+                // Cập nhật UI ngay lập tức
+                document.querySelectorAll('.device-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                if (event && event.currentTarget) {
+                    event.currentTarget.classList.add('selected');
+                }
+            }
+
+            sendKey(key, deviceId) {
+                if (!this.isConnected || !deviceId) {
+                    alert('⚠️ Vui lòng chọn một thiết bị trước!');
+                    return;
+                }
+
+                const command = {
+                    device_id: deviceId,
+                    type: 'key',
+                    command: key,
+                    data: { key }
+                };
+
+                this.socket.emit('control_command', command);
+                console.log('⌨️ Gửi lệnh key:', command);
+            }
+
+            startLatencyCheck() {
+                setInterval(() => {
+                    if (this.socket && this.socket.connected) {
+                        // Gửi ping cho tất cả thiết bị đang kết nối
+                        this.phoneElements.forEach((element, deviceId) => {
+                            this.socket.emit('ping', {
+                                timestamp: new Date().toISOString(),
+                                viewer_id: this.socket.id,
+                                device_id: deviceId  // THÊM device_id
+                            });
+                        });
+                    }
+                }, 2000);
+            }
+
+            updateStats() {
+                document.getElementById('latency').textContent = `${this.latency}ms`;
+            }
+
+            updatePhoneStatus(statusText = null, deviceInfo = null) {
+                // Cập nhật trạng thái cho tất cả các điện thoại
+                this.phoneElements.forEach((phoneElement, deviceId) => {
+                    if (statusText) {
+                        this.updateDeviceStatus(deviceId, statusText);
+                    } else {
+                        this.updatePhoneStatusForDevice(deviceId);
+                    }
+                });
+            }
+
+            disconnect() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                    this.updateStatus('🔌 Đã ngắt kết nối', false);
+                    this.updatePhoneStatus('Đã ngắt kết nối');
+                }
+            }
+
+            updateSelectedDeviceDisplay() {
+                // Đã xóa phần hiển thị thiết bị đang chọn
+            }
+        }
+
+        // Khởi tạo viewer toàn cục
+        let viewer;
+
+        // Khởi tạo khi trang load xong
+        document.addEventListener('DOMContentLoaded', function() {
+            viewer = new RemoteViewer();
+        });
+
+        // Global functions
+        window.selectDevice = function(deviceId, event) {
+            if (viewer) {
+                viewer.selectDevice(deviceId, event);
+            }
+        };
+
+        window.sendKey = function(key) {
+            if (viewer) viewer.sendKey(key);
+        };
+
+        window.takeScreenshot = function() {
+            alert('📸 Tính năng chụp màn hình đang được phát triển');
+        };
+
+        window.disconnect = function() {
+            if (viewer) viewer.disconnect();
+        };
+    </script>
+</body>
+</html>
