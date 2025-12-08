@@ -1,7 +1,11 @@
-👤 Tác giả: Nguyễn Minh Tâm + chat GPT
+## 📩 Liên hệ
 
-🌐 Website: https://app.mtoolsmax.uk/
+👤 Tác giả: **Nguyễn Minh Tâm**  + Chat GPT
 
-💬 Telegram: @NMTproTool
+🌐 Website: https://app.mtoolsmax.uk/  
 
-nếu bạn chạy golike, trao đổi sub, tương tác chéo hãy qua web mình ủng hộ :))
+💬 Telegram: [@NMTproTool](https://t.me/NMTproTool)  
+
+📺 YouTube: [@codevuong](https://www.youtube.com/@codevuong)  
+
+> nếu bạn chạy golike, trao đổi sub, tương tác chéo hãy qua web mình ủng hộ :))
