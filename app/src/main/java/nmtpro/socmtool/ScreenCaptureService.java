@@ -168,8 +168,13 @@ public class ScreenCaptureService extends Service {
     private void initializeSocketManager() {
         try {
             SharedPreferences prefs = getSharedPreferences("ScreenCapturePrefs", Context.MODE_PRIVATE);
-            String serverIp = prefs.getString("server_ip", "192.168.5.214");
-            String serverPort = prefs.getString("server_port", "3000");
+            String serverIp = prefs.getString("server_ip", null);
+            String serverPort = prefs.getString("server_port", null);
+            
+            if (serverIp == null || serverPort == null) {
+                Log.w(TAG, "Server config not found, skipping socket connection");
+                return;
+            }
 
             Log.d(TAG, "Initializing SocketManager with: " + serverIp + ":" + serverPort);
 
