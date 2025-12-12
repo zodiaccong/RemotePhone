@@ -1,32 +1,36 @@
-name: Build Android Release APK
+name: Android Build
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: "17"
+          distribution: temurin
+          java-version: 17
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Decode Keystore
+        run: |
+          echo "$KEYSTORE_FILE" | base64 -d > my-release-key.keystore
 
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ./app/keystore.keystore
+        env:
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
 
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Upload APK
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: remote-phone
