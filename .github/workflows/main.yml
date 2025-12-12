@@ -14,6 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -23,7 +26,6 @@ jobs:
       - name: Decode Keystore
         run: |
           echo "$KEYSTORE_FILE" | base64 -d > my-release-key.keystore
-
         env:
           KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
 
@@ -33,5 +35,5 @@ jobs:
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: remote-phone
+          name: release-apk
           path: app/build/outputs/apk/release/*.apk
