@@ -1,33 +1,50 @@
-name: Remote Phone
+name: Remote Phone APK
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Make gradlew executable
-      run: chmod +x ./gradlew
+      - name: Decode keystore
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > my-release-key.jks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
-    - name: Build Release APK
-      run: ./gradlew assembleRelease
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: Remote Phone
-        path: app/build/outputs/apk/release/*.apk
+      - name: Build release
+        run: ./gradlew assembleRelease
+
+      - name: Sign APK
+        run: |
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore my-release-key.jks \
+          app/build/outputs/apk/release/app-release-unsigned.apk \
+          ${{ secrets.KEY_ALIAS }} \
+          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+          -keypass ${{ secrets.KEY_PASSWORD }}
+
+      - name: Zipalign APK
+        run: |
+          zipalign -v 4 app/build/outputs/apk/release/app-release-unsigned.apk \
+          app-release-signed.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-phone
+          path: remote-phone.apk
