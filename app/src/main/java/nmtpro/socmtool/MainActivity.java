@@ -112,8 +112,14 @@ public class MainActivity extends AppCompatActivity {
         String serverIp = prefs.getString("server_ip", "192.168.5.214");
         String serverPort = prefs.getString("server_port", "3000");
 
-        serverIpEditText.setText(serverIp);
-        serverPortEditText.setText(serverPort);
+        if (serverIpEditText.getText().toString().isEmpty()) {
+            serverIpEditText.setText(serverIp);
+        }
+        
+        if (serverPortEditText.getText().toString().isEmpty()) {
+            serverPortEditText.setText(serverPort);
+        }
+
         addLog("Đã tải cấu hình: " + serverIp + ":" + serverPort);
     }
 
