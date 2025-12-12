@@ -163,20 +163,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopScreenCapture() {
-        // Stop screen capture service
+        // Tắt foreground service
         Intent serviceIntent = new Intent(this, ScreenCaptureService.class);
         stopService(serviceIntent);
-
-        // Disconnect socket
+    
+        // Dừng socket ở MainActivity
         if (socketManager != null) {
             socketManager.disconnect();
+            socketManager = null;
         }
-
+    
         updateStatus("Đã dừng chia sẻ màn hình");
         stopServiceButton.setEnabled(false);
         startServiceButton.setEnabled(true);
-        addLog("Đã dừng chia sẻ màn hình");
+        addLog("Đã dừng chia sẻ màn hình (Service + Socket đã tắt hoàn toàn)");
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
