@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         initializeUI();
         setupEventListeners();
         requestPermissions();
+        loadServerConfig();
     }
 
     private void initializeUI() {
