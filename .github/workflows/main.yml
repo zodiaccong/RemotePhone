@@ -27,7 +27,7 @@ jobs:
         run: |
           echo "$KEYSTORE_FILE" | base64 -d > app/my-release-key.keystore
         env:
-          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_BASE64 }}
 
       - name: Build Release APK
         env:
