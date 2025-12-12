@@ -111,14 +111,8 @@ public class MainActivity extends AppCompatActivity {
         String serverIp = prefs.getString("server_ip", "192.168.5.214");
         String serverPort = prefs.getString("server_port", "3000");
 
-        if (serverIpEditText.getText().toString().isEmpty()) {
-            serverIpEditText.setText(serverIp);
-        }
-        
-        if (serverPortEditText.getText().toString().isEmpty()) {
-            serverPortEditText.setText(serverPort);
-        }
-
+        serverIpEditText.setText(serverIp);
+        serverPortEditText.setText(serverPort);
         addLog("Đã tải cấu hình: " + serverIp + ":" + serverPort);
     }
 
@@ -168,22 +162,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopScreenCapture() {
-        // Tắt foreground service
+        // Stop screen capture service
         Intent serviceIntent = new Intent(this, ScreenCaptureService.class);
         stopService(serviceIntent);
-    
-        // Dừng socket ở MainActivity
+
+        // Disconnect socket
         if (socketManager != null) {
             socketManager.disconnect();
-            socketManager = null;
         }
-    
+
         updateStatus("Đã dừng chia sẻ màn hình");
         stopServiceButton.setEnabled(false);
         startServiceButton.setEnabled(true);
-        addLog("Đã dừng chia sẻ màn hình (Service + Socket đã tắt hoàn toàn)");
+        addLog("Đã dừng chia sẻ màn hình");
     }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
